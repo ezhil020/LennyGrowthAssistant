@@ -144,14 +144,19 @@ class ChatService:
             role="user",
             content=user_message_text,
         )
+        # Commit immediately so the user message is saved and locks are released before long LLM calls
+        await self._message_repo.db.commit()
 
         # 2. Title generation (non-blocking feel)
         if session.title == "New Chat":
             try:
                 title = await self._session_svc.generate_title(session_id, user_message_text)
                 yield {"event": "session_title", "data": {"title": title}}
-            except Exception:
-                pass
+                await self._session_repo.db.commit()
+            except Exception as e:
+                logger.warning("title_generation_failed", error=str(e))
+                # Rollback to clear any failed transaction state (e.g. from a DB timeout during flush)
+                await self._session_repo.db.rollback()
 
         # 3. Load history
         history = await self._session_svc.get_history_as_dicts(session_id)

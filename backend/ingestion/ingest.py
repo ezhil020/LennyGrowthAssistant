@@ -79,7 +79,7 @@ async def _get_transcript_file_urls(session: aiohttp.ClientSession, limit: int) 
     parts = repo_url.rstrip("/").split("/")
     owner, repo = parts[-2], parts[-1]
 
-    api_url = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/"
+    api_url = f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/episodes"
     headers = {"Accept": "application/vnd.github.v3+json", "User-Agent": "LennyGrowthAssistant/1.0"}
 
     async with session.get(api_url, headers=headers) as response:
@@ -90,8 +90,12 @@ async def _get_transcript_file_urls(session: aiohttp.ClientSession, limit: int) 
 
     files = []
     for item in items:
-        if item.get("type") == "file" and item.get("name", "").endswith((".txt", ".md")):
-            files.append((item["name"], item["download_url"]))
+        # The repo has directories for each episode, e.g., episodes/guest-name/transcript.md
+        if item.get("type") == "dir":
+            episode_dir = item.get("name")
+            # Construct the raw download URL manually to avoid 300+ extra API calls which would hit rate limits
+            raw_url = f"https://raw.githubusercontent.com/{owner}/{repo}/main/episodes/{episode_dir}/transcript.md"
+            files.append((episode_dir, raw_url))
 
     if limit > 0:
         files = files[:limit]

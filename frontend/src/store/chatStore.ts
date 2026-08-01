@@ -136,12 +136,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
           for (const line of lines) {
             if (!line.trim()) continue
             
-            const eventMatch = line.match(/^event: (.*)\n/)
-            const dataMatch = line.match(/\ndata: (.*)$/)
+            const parts = line.split('\n')
+            const eventLine = parts.find(p => p.startsWith('event: '))
+            const dataLine = parts.find(p => p.startsWith('data: '))
             
-            if (eventMatch && dataMatch) {
-              const eventType = eventMatch[1]
-              const dataStr = dataMatch[1]
+            if (eventLine && dataLine) {
+              const eventType = eventLine.replace('event: ', '').trim()
+              const dataStr = dataLine.replace('data: ', '').trim()
               let data: any
               try {
                 data = JSON.parse(dataStr)

@@ -53,11 +53,8 @@ async def _embed_ollama(text: str) -> list[float]:
             )
             response.raise_for_status()
             data = response.json()
-            # Ollama returns {"embeddings": [[...]]} for /api/embed
-            embeddings = data.get("embeddings") or data.get("embedding")
-            if isinstance(embeddings[0], list):
-                return embeddings[0]
-            return embeddings
+            # Ollama /api/embed returns {"embeddings": [[...]]}
+            return data["embeddings"][0]
     except httpx.ConnectError:
         raise RuntimeError(
             "Cannot reach Ollama for embeddings. "
