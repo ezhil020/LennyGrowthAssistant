@@ -12,16 +12,14 @@ function App() {
   const [health, setHealth] = useState<HealthStatus | null>(null)
 
   useEffect(() => {
-    // Fetch initial config and health
     const init = async () => {
       try {
         const { data } = await configApi.getProviders()
         setProviders(data.providers)
-        
         const { data: healthData } = await healthApi.check()
         setHealth(healthData)
       } catch (error) {
-        console.error("Failed to fetch initial config", error)
+        console.error('Failed to fetch initial config', error)
       }
     }
     init()
@@ -33,18 +31,18 @@ function App() {
       const { data } = await configApi.getProviders()
       setProviders(data.providers)
     } catch (error) {
-      console.error("Failed to switch provider", error)
+      console.error('Failed to switch provider', error)
     }
   }
 
   return (
     <div className="app-layout">
       <Sidebar />
-      
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        {/* Top Status Bar (Global) */}
-        <div style={{ padding: '8px 16px', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'flex-end', gap: '16px', alignItems: 'center' }}>
-          
+
+      {/* main-area stacks the status bar on top, then the content below */}
+      <div className="main-area">
+        {/* Top Status Bar — always visible, never overlapped */}
+        <div className="top-status-bar">
           <div className="health-badge" title={health ? JSON.stringify(health.checks, null, 2) : 'Checking...'}>
             <div className={`health-dot ${health ? (health.status === 'ok' ? 'ok' : 'error') : 'checking'}`} />
             System {health?.status || 'Checking'}
@@ -53,20 +51,21 @@ function App() {
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <span className="text-muted text-sm">Provider:</span>
             {providers.map(p => (
-              <button 
+              <button
                 key={p.name}
-                className="provider-toggle" 
+                className="provider-toggle"
                 onClick={() => handleProviderSwitch(p.name)}
-                style={{ borderColor: p.is_active ? 'var(--accent-primary)' : '' }}
+                style={{ borderColor: p.is_active ? 'rgba(0,212,170,0.5)' : '' }}
               >
-                <div className={`provider-dot ${p.name}`} style={{ opacity: p.is_active ? 1 : 0.2 }} />
+                <div className={`provider-dot ${p.name}`} style={{ opacity: p.is_active ? 1 : 0.25 }} />
                 {p.name.charAt(0).toUpperCase() + p.name.slice(1)}
               </button>
             ))}
           </div>
         </div>
 
-        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+        {/* content-area fills the remaining vertical space */}
+        <div className="content-area">
           {activeSessionId ? (
             <>
               <ChatPane />

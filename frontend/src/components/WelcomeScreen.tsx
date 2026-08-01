@@ -12,7 +12,7 @@ export function WelcomeScreen() {
 
   return (
     <div className="welcome-screen">
-      <div className="welcome-logo">✨</div>
+      <div className="welcome-logo">✦</div>
       <div>
         <h1 className="welcome-title">Lenny Growth Assistant</h1>
         <p className="welcome-subtitle">
@@ -22,7 +22,7 @@ export function WelcomeScreen() {
 
       <div className="welcome-cards">
         <div className="welcome-card" onClick={() => handleStart()}>
-          <div className="welcome-card-icon">🧠</div>
+          <div className="welcome-card-icon">⬡</div>
           <div className="welcome-card-title">Expert Q&A</div>
           <div className="welcome-card-desc">Ask specific questions about retention, PLG, and product-market fit.</div>
         </div>
@@ -32,13 +32,13 @@ export function WelcomeScreen() {
           <div className="welcome-card-desc">Synthesize insights into high-impact, skimmable essays.</div>
         </div>
         <div className="welcome-card" onClick={() => handleStart()}>
-          <div className="welcome-card-icon">🎨</div>
+          <div className="welcome-card-icon">◈</div>
           <div className="welcome-card-title">Artifact Generation</div>
           <div className="welcome-card-desc">Create HTML dashboards and Markdown documents on the fly.</div>
         </div>
       </div>
-      
-      <button className="btn-new-chat" style={{ width: 'auto', padding: '12px 32px', fontSize: '15px' }} onClick={() => handleStart()}>
+
+      <button className="btn-start" onClick={() => handleStart()}>
         Start Chatting
       </button>
     </div>
