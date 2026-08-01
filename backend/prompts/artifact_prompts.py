@@ -21,38 +21,34 @@ For HTML artifacts:
 Output ONLY the raw artifact content. Start immediately with the content."""
 
 
-ARTIFACT_MARKDOWN_PREFIX = """Generate a well-structured Markdown document artifact based on \
-the following conversation context and request.
+ARTIFACT_AUTO_PREFIX = """Generate an artifact based on the following context and request.
 
 REQUEST: {request}
 
-CONVERSATION CONTEXT:
+CONTEXT (Conversation + Optional Retrieved Transcripts):
 {context}
 
-Produce only the Markdown content — no preamble."""
+CRITICAL RULES FOR FORMAT DETECTION:
+You must determine whether to output a Markdown document or an HTML/CSS webpage based on the user's explicit intent in the REQUEST.
+- Use HTML/CSS if the user explicitly asks for: html, css, UI, component, dashboard, webpage, interactive element, or visual layout.
+- Use Markdown if the user asks for: markdown, document, checklist, essay, summary, notes, or just general text formatting.
+- If ambiguous, default to Markdown.
+
+If outputting Markdown:
+- Use proper Markdown headings (# H1, ## H2), tables, and lists.
+- Do NOT wrap the entire response in ```markdown code fences.
+
+If outputting HTML:
+- Output complete, self-contained HTML starting with <!DOCTYPE html>
+- All CSS must be inline in <style> tags. No external stylesheets or CDNs.
+- Do NOT wrap the response in ```html code fences.
+
+Produce ONLY the raw artifact content. Start immediately with the content."""
 
 
-ARTIFACT_HTML_PREFIX = """Generate a complete, self-contained HTML/CSS artifact based on \
-the following conversation context and request.
-
-REQUEST: {request}
-
-CONVERSATION CONTEXT:
-{context}
-
-Rules:
-- Complete HTML document with <!DOCTYPE html> and <html> tags
-- All CSS inline in <style> tags — no external stylesheets
-- No external JavaScript libraries — vanilla JS only if needed
-- Modern, clean visual design
-- Produce ONLY the HTML content. Start with <!DOCTYPE html>."""
-
-
-def build_artifact_prompt(request: str, context: str, artifact_type: str) -> str:
+def build_artifact_prompt(request: str, context: str) -> str:
     """Build the user-turn prompt for artifact generation."""
-    if artifact_type == "html":
-        return ARTIFACT_HTML_PREFIX.format(request=request, context=context)
-    return ARTIFACT_MARKDOWN_PREFIX.format(request=request, context=context)
+    return ARTIFACT_AUTO_PREFIX.format(request=request, context=context)
 
 
 def detect_artifact_type(content: str) -> str:

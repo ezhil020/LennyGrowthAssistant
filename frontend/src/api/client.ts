@@ -36,6 +36,7 @@ export interface Message {
   content: string
   skill_used?: string
   routing_intent?: string
+  artifact_id?: string
   sources?: SourceAttribution
   created_at: string
 }

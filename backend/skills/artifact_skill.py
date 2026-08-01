@@ -1,8 +1,8 @@
 """
 skills/artifact_skill.py — Artifact generation skill.
 
-No retrieval — uses conversation context only.
-Detects whether to generate Markdown or HTML based on the user request.
+Can use Retrieval-Augmented Generation (RAG) when the request requires it,
+or fall back to conversation history if the request is vague (e.g., "turn that into").
 """
 
 import structlog
@@ -10,26 +10,16 @@ import structlog
 from backend.artifacts.validator import validate_artifact
 from backend.context.context_builder import ContextBuilder
 from backend.llm_service.llm_service import LLMService
+from backend.prompts.qa_prompts import build_retrieval_context
 from backend.prompts.artifact_prompts import (
     ARTIFACT_SYSTEM_PROMPT,
     build_artifact_prompt,
     detect_artifact_type,
 )
+from backend.retrieval.retrieval_service import RetrievalService
 from backend.skills.base import Skill, SkillOutput
 
 logger = structlog.get_logger(__name__)
-
-
-def _detect_requested_type(query: str) -> str:
-    """Detect whether the user wants HTML or Markdown artifact."""
-    q = query.lower()
-    html_signals = [
-        "html", "css", "webpage", "web page", "ui", "component",
-        "dashboard", "landing page", "interface", "button", "card",
-    ]
-    if any(s in q for s in html_signals):
-        return "html"
-    return "markdown"
 
 
 class ArtifactSkill(Skill):
@@ -37,27 +27,59 @@ class ArtifactSkill(Skill):
 
     name = "artifact"
 
-    def __init__(self, llm_service: LLMService) -> None:
+    def __init__(
+        self,
+        llm_service: LLMService,
+        retrieval_service: RetrievalService,
+    ) -> None:
         self._llm = llm_service
+        self._retrieval = retrieval_service
         self._context_builder = ContextBuilder(llm_service)
+
+    def _is_vague(self, query: str) -> bool:
+        """Heuristic to determine if the user query is vague and should rely on chat history."""
+        vague_patterns = [
+            "make that", "write that", "turn that", "turn this",
+            "convert that", "convert this", "for that", "for this"
+        ]
+        q = query.lower()
+        return any(p in q for p in vague_patterns)
 
     async def run(self, user_query: str, history: list[dict]) -> SkillOutput:
         logger.info("artifact_skill_run", query_len=len(user_query))
 
-        # 1. Determine artifact type from request
-        requested_type = _detect_requested_type(user_query)
+        # 1. Determine if we need RAG
+        attribution = None
+        retrieval_context = ""
+        if not self._is_vague(user_query):
+            attribution = await self._retrieval.retrieve(user_query)
+            if attribution and attribution.chunks:
+                chunk_dicts = [
+                    {
+                        "episode_title": c.episode_title,
+                        "similarity_score": c.similarity_score,
+                        "chunk_text": c.chunk_text,
+                    }
+                    for c in attribution.chunks
+                ]
+                retrieval_context = build_retrieval_context(chunk_dicts)
 
-        # 2. Build conversation context (no retrieval)
-        context_summary = self._build_context_summary(history)
+        # 2. Build conversation context
+        chat_summary = self._build_context_summary(history)
+        
+        # Combine chat summary and retrieval context
+        combined_context = f"--- CHAT HISTORY ---\n{chat_summary}\n\n"
+        if retrieval_context:
+            combined_context += f"{retrieval_context}\n"
+
         user_prompt = build_artifact_prompt(
             request=user_query,
-            context=context_summary,
-            artifact_type=requested_type,
+            context=combined_context,
         )
 
         context = await self._context_builder.build(
-            history=[],  # Don't include history in messages — it's in the prompt
-            source_attribution=None,
+            history=[],  # History is already injected into the prompt
+            source_attribution=attribution,
             user_query=user_prompt,
             system_prompt=ARTIFACT_SYSTEM_PROMPT,
         )

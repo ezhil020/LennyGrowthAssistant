@@ -50,6 +50,6 @@ def build_registry(llm_service, retrieval_service) -> SkillRegistry:
 
     SkillRegistry.register(QASkill(llm_service=llm_service, retrieval_service=retrieval_service))
     SkillRegistry.register(Ship30Skill(llm_service=llm_service, retrieval_service=retrieval_service))
-    SkillRegistry.register(ArtifactSkill(llm_service=llm_service))
+    SkillRegistry.register(ArtifactSkill(llm_service=llm_service, retrieval_service=retrieval_service))
 
     return registry

@@ -62,6 +62,7 @@ function ThinkingIndicator() {
 
 function MessageTurn({ message, isStreaming }: { message: Message; isStreaming?: boolean }) {
   const isUser = message.role === 'user'
+  const { openArtifact } = useChatStore()
 
   return (
     <div className={`message-turn ${isUser ? 'user' : 'assistant'}`}>
@@ -84,12 +85,37 @@ function MessageTurn({ message, isStreaming }: { message: Message; isStreaming?:
       <div className="turn-body">
         {isUser ? (
           <div style={{ whiteSpace: 'pre-wrap' }}>{message.content}</div>
+        ) : !message.content && isStreaming ? (
+          <div className="thinking-indicator">
+            <div className="thinking-dots">
+              <div className="thinking-dot" />
+              <div className="thinking-dot" />
+              <div className="thinking-dot" />
+            </div>
+            <span className="thinking-label">Thinking…</span>
+          </div>
         ) : (
           <div className="artifact-markdown">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {message.content}
             </ReactMarkdown>
             {isStreaming && <span className="streaming-cursor" />}
+            {message.artifact_id && (
+              <div style={{ marginTop: '12px' }}>
+                <button 
+                  onClick={() => openArtifact(message.artifact_id!)}
+                  style={{ 
+                    padding: '6px 12px', fontSize: '13px', borderRadius: '6px', 
+                    cursor: 'pointer', background: 'var(--bg-panel)', 
+                    border: '1px solid var(--border-color)', color: 'var(--text-main)', 
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                    fontWeight: 500
+                  }}
+                >
+                  ◈ View Generated Artifact
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

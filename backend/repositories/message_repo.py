@@ -1,6 +1,7 @@
 """repositories/message_repo.py — Message CRUD."""
 
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from backend.models.orm import Message
 from backend.repositories.base import BaseRepository
@@ -12,6 +13,7 @@ class MessageRepository(BaseRepository[Message]):
     async def get_session_messages(self, session_id: str) -> list[Message]:
         result = await self.db.execute(
             select(Message)
+            .options(selectinload(Message.artifacts))
             .where(Message.session_id == session_id)
             .order_by(Message.created_at.asc())
         )

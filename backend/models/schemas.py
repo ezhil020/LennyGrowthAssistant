@@ -40,6 +40,7 @@ class MessageResponse(BaseModel):
     content: str
     skill_used: str | None
     routing_intent: str | None
+    artifact_id: str | None = None
     sources: SourceAttribution | None = None
     created_at: datetime
 

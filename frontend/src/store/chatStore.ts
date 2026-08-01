@@ -164,7 +164,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
                   )
                 }))
               } else if (eventType === 'artifact') {
-                set({ activeArtifact: data as Artifact, isArtifactVisible: true })
+                const artifactData = data as Artifact
+                set((state) => ({ 
+                  activeArtifact: artifactData, 
+                  isArtifactVisible: true,
+                  messages: state.messages.map((m) => 
+                    m.id === assistantMsgId ? { ...m, artifact_id: artifactData.id } : m
+                  )
+                }))
               } else if (eventType === 'routing') {
                 set((state) => ({
                   messages: state.messages.map((m) => 

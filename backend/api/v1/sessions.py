@@ -49,6 +49,11 @@ async def get_session(
                 sources = SourceAttribution(**msg.sources_json)
             except Exception:
                 pass
+        artifact_id = None
+        if msg.artifacts:
+            # A message usually only has 1 artifact
+            artifact_id = msg.artifacts[0].id
+
         msg_responses.append(
             MessageResponse(
                 id=msg.id,
@@ -57,6 +62,7 @@ async def get_session(
                 content=msg.content,
                 skill_used=msg.skill_used,
                 routing_intent=msg.routing_intent,
+                artifact_id=artifact_id,
                 sources=sources,
                 created_at=msg.created_at,
             )
