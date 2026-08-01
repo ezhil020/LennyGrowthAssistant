@@ -26,6 +26,8 @@ import structlog
 
 from backend.config import settings
 from backend.database import AsyncSessionLocal
+from sqlalchemy import select
+from backend.models.orm import TranscriptChunk
 from backend.repositories.chunk_repo import ChunkRepository
 from backend.retrieval.embeddings import embed_text
 
@@ -149,6 +151,7 @@ async def _ingest_file(
                 chunk_index=i,
                 error=str(e),
             )
+            raise  # Let the outer loop handle rollback and recovery
 
     logger.info("file_ingested", filename=filename, chunks=ingested)
     return ingested
@@ -177,12 +180,24 @@ async def run_ingestion(limit: int | None = None) -> dict:
 
             # Process files sequentially to avoid overwhelming the embedding model
             for filename, raw_url in file_list:
-                chunks_added = await _ingest_file(
-                    http_session, filename, raw_url, chunk_repo
+                # Check if this file is already ingested
+                result = await db_session.execute(
+                    select(TranscriptChunk.id).where(TranscriptChunk.source_url == raw_url).limit(1)
                 )
-                total_files += 1
-                total_chunks += chunks_added
-                await db_session.commit()  # Commit after each file
+                if result.scalar():
+                    logger.info("file_already_ingested", filename=filename)
+                    continue
+
+                try:
+                    chunks_added = await _ingest_file(
+                        http_session, filename, raw_url, chunk_repo
+                    )
+                    total_files += 1
+                    total_chunks += chunks_added
+                    await db_session.commit()  # Commit after each file
+                except Exception as e:
+                    logger.error("file_ingestion_error", filename=filename, error=str(e))
+                    await db_session.rollback()
 
     logger.info(
         "ingestion_complete",
