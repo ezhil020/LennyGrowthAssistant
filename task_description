@@ -1,0 +1,92 @@
+# Agentic AI Engineer - Intern
+
+# Welcome!
+
+Thank you for your interest in the Agentic AI Engineer role.
+As a final. year student at CIT, Coimbatore, you have already built a strong technical foundation. This take-home assignment is designed to evaluate your ability to bridge that academic knowledge with real-world AI engineering. We want to see how you string together various AI agents, APIs, and algorithms to build a cohesive, automated workflow. We are looking for product sense, technical execution, and your ability to leverage AI tools creatively.
+
+## 🎯 The Objective
+
+Your task is to build a full-stack, AI-powered conversational web application called **"The Lenny Growth Assistant."**
+
+This application will ingest transcripts from *Lenny's Podcast*, allow users to ask complex Q&A questions, and generate highly specific, formatted content based on that knowledge. Furthermore, the application must be able to generate code and markdown artifacts and render them natively within the UI—creating an immersive, ChatGPT-like workspace.
+
+## ⚙️ Core Requirements & Workflow
+
+Your application pipeline must perform the following steps and adhere to these constraints:
+
+### 1. API & Session Management (FastAPI)
+
+- **Backend Framework:** You must build the backend API using FastAPI.
+- **Agent Integration:** Build the API on top of the Anthropic Claude SDK or Pi Coding Agent.
+- **Session Handling:** The API must allow the user to start **new chat sessions**, exactly how the "New Chat" feature works in ChatGPT. Each session must maintain its own context.
+- **Database:** All conversations, session IDs, and user metadata must be persistently stored in a postgres database. You can choose either Supabase or Railway
+
+### 2. Flexible LLM Configuration (Cloud & Local)
+
+Your system must have a configuration layer that allows the user to easily switch the underlying LLM engine:
+
+- **Cloud LLM:** Integration with a cloud provider (e.g., Anthropic Claude, OpenAI).
+- **Local LLM (Mandatory for Demo):** For the local demo submission, you **must** configure the application to run using a local LLM via Ollama. You may use any model that runs comfortably on your laptop.
+
+### 3. Knowledge Base
+
+- **Data Source:** Transcripts from *Lenny's Podcast/Newsletter* https://github.com/ChatPRD/lennys-podcast-transcripts.
+
+### **4a. Task: Conversational Chatbot on the transcripts**
+
+- **Q&A Agent:** Implement a system (RAG / long-context prompting) that allows the user to ask product management and growth questions. The agent must answer *strictly* using the insights from Lenny's transcripts.
+
+### 4b. Task: Content Generation (Ship30for30 Style)
+
+- The agent must feature a specific "Skill" or tool that allows it to synthesize answers into the **Ship30for30 style**. We expect you to read this and know how to write such a content. The skill should be generated.
+- *Requirement:* The output should be formatted as an "Essay" (approx. 1250 words, strong hook, heavily formatted with bullet points, bold text for skimmability, and a clear takeaway).
+
+### 4c. Task: Artifact Generation & Viewer UI
+
+- When prompted, the AI must be able to generate **Artefacts** (Markdown documents or complete HTML/CSS snippets) based on the conversation context.
+- **In-App Viewer:** Your frontend application must feature an "Artifact Viewer" (similar to Claude's Artifacts). When the AI generates HTML/CSS or Markdown, the application should not just show the raw code; it should render the actual UI component or stylized document side-by-side with the chat. You should build this feature within the app (not redirect to external browser or app).
+
+## 🛠️ Testing & Submission Guidelines
+
+We need to be able to test your solution locally with our own API keys and local Ollama setup.
+
+1. **Test Locally First:** Please test your application thoroughly using your local Ollama instance and your own API keys to ensure the end-to-end pipeline works seamlessly.
+2. **Repository:** Host your code in a **public** GitHub repository.
+3. **Documentation (README.md):** Your repository must include a highly detailed `README.md` file including:
+    - A brief architecture overview of how your agents, FastAPI, and database work together.
+    - Step-by-step instructions on how the evaluator can deploy and run it locally.
+    - Environment variables setup (if any). Dont push any of your keys.
+    - Dependencies installation commands.
+4. **UI/UX Design Document (`design.md`):** Include a `design.md` file in your repository on how you think about and structure your UI and UX. 
+    1. Impeccable.style is a good tool/skill for design
+5. **PRD**: You should follow structured software building process. We expect that you start with a PRD. 
+    1. You are free to use any software factory of your choice. We like Matt Pocock’s skills, Compound Engineering, etc. Search for them to understand and learn and implement.
+6. **Architecture**
+    1. This should detail your database schema, API endpoints, agentic routing logic, and how you implemented the LLM toggle switch.
+7. **Agent Transcripts:** We recommend you to use coding agents (like Claude, Codex, Cursor, Devin, etc) to help you write this application. It is mandatory to **include their transcripts/logs in a folder**. We *definitely* want to see the ones that failed and how you corrected them!
+8. **Video**: Record a 2-3 minute video, with your camera enabled, explaining the problem statement and demo’ing the application. You should do this free-form (and not reading off a transcript). Upload the video to YouTube.
+9. Submit at https://docs.google.com/forms/d/e/1FAIpQLSf-UoZ7CPoINC3m9MuwyNW_0tRIu6GSEC89dwf3DMC4j0KtCg/viewform?usp=dialog
+10. **Due Date**: 2nd August, 2026 EOD
+
+## 📝 Evaluation Criteria
+
+You will be evaluated on the following dimensions:
+
+- **Agentic Architecture & Skills:** How well you orchestrate the tools and SDKs. We will look specifically at how you implemented the "Skills" (Q&A vs. Ship30for30 formatting) and how the agent decides which skill to use.
+- **System Design:** The clarity of your technical writing, the structure of your database, and how cleanly the FastAPI backend is designed to handle multiple sessions and LLM configurations.
+- **Code Quality & Robustness:** Cleanliness of the code, separation of concerns (frontend vs. backend logic), and error handling (e.g., handling missing API keys, Ollama timeouts, or database connection failures).
+- **Product Sense, UI, and UX:** The frontend execution is critical here. How smooth is the chat interface? How well does the Artifact Viewer render HTML/CSS and Markdown? Does the application feel like a modern, usable product?
+- **Prompt Engineering & Output Quality:** How accurately the system captures the "Ship30for30" style and how reliably it stays grounded in Lenny's transcripts.
+
+### Helpful Resources & Tools
+
+- **FastAPI:** https://fastapi.tiangolo.com/
+- **Ollama (Local LLMs):** https://ollama.com/
+- **Anthropic Claude SDK:** https://docs.anthropic.com/
+- **Pi Coding Agent** : https://pi.dev/
+- Supabase: https://supabase.com/
+- Railway: https://railway.com/
+- **Ship30for30 Concept** https://www.ship30for30.com/post/how-to-start-writing-online-the-ship-30-for-30-ultimate-guide
+
+Good luck! We are excited to see what you build.

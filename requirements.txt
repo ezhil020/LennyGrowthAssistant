@@ -1,0 +1,39 @@
+# ── Web Framework ────────────────────────────────────────────
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.17
+
+# ── Database ─────────────────────────────────────────────────
+sqlalchemy[asyncio]>=2.0.30
+asyncpg>=0.29.0
+alembic>=1.13.0
+pgvector>=0.3.0
+
+# ── LLM Providers ────────────────────────────────────────────
+anthropic>=0.40.0
+httpx>=0.24.0
+tenacity>=9.0.0
+
+# ── Embeddings ───────────────────────────────────────────────
+openai>=1.50.0
+
+# ── Configuration ────────────────────────────────────────────
+pydantic>=2.9.0
+pydantic-settings>=2.6.0
+python-dotenv>=1.0.0
+
+# ── Logging ──────────────────────────────────────────────────
+structlog>=24.4.0
+
+# ── Artifact Validation ──────────────────────────────────────
+bleach>=6.1.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+
+# ── Ingestion / Text Processing ──────────────────────────────
+aiohttp>=3.10.0
+aiofiles>=23.2.0
+
+# ── Testing ──────────────────────────────────────────────────
+pytest>=8.3.0
+pytest-asyncio>=0.23.0
