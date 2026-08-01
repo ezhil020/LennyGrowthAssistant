@@ -31,12 +31,9 @@ class HybridRetriever(Retriever):
         self._lexical = LexicalRetriever(db)
 
     async def retrieve(self, query: str, top_k: int = 10) -> list[SourceChunk]:
-        # Fetch from both retrievers in parallel
-        import asyncio
-        vector_results, lexical_results = await asyncio.gather(
-            self._vector.retrieve(query, top_k=top_k * 2),
-            self._lexical.retrieve(query, top_k=top_k * 2),
-        )
+        # Fetch from both retrievers sequentially (asyncpg doesn't support concurrent queries on one session)
+        vector_results = await self._vector.retrieve(query, top_k=top_k * 2)
+        lexical_results = await self._lexical.retrieve(query, top_k=top_k * 2)
 
         # Build RRF scores indexed by chunk_id
         rrf_scores: dict[str, float] = {}
