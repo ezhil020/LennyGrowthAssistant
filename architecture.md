@@ -118,3 +118,57 @@ sequenceDiagram
     DB-->>S: Saved Artifact
     S->>S: Emit `artifact` SSE Event
 ```
+
+## Database Schema (pgvector)
+
+The backend uses **SQLAlchemy** connected to PostgreSQL. Below is a high-level overview of the ORM models:
+
+- `Session`: Represents a chat thread.
+  - `id` (UUID), `title` (String), `created_at` (DateTime)
+  - Tracks `llm_provider` and `embedding_model` used for that specific session.
+- `Message`: Represents an individual turn in a session.
+  - `id` (UUID), `session_id` (FK), `role` (user|assistant), `content` (Text)
+  - Stores metadata: `skill_used`, `routing_intent`, and `sources_json` for debugging/UI.
+- `Artifact`: Represents generated documents (Markdown/HTML).
+  - `id` (UUID), `message_id` (FK), `type` (markdown|html), `content` (Text), `version` (Int).
+- `TranscriptChunk`: Stores ingested podcast segments.
+  - `id` (UUID), `episode_title` (String), `chunk_text` (Text), `embedding` (Vector: 768 dims), `source_url`.
+
+## API Endpoints (`/api/v1`)
+
+The FastAPI application follows a RESTful pattern with SSE for real-time streaming:
+- **Sessions**:
+  - `GET /sessions`: List all sessions
+  - `POST /sessions`: Create a new session
+  - `GET /sessions/{id}`: Load a session and its message history
+  - `DELETE /sessions/{id}`: Delete a session
+- **Chat**:
+  - `POST /sessions/{id}/chat`: Primary endpoint. Accepts `{message: str, stream: bool}`. Returns a Server-Sent Events (SSE) stream containing token chunks, retrieved sources, routing decisions, and artifact events.
+- **Artifacts**:
+  - `GET /artifacts/{id}`: Retrieve a specific artifact document by ID.
+- **Ingestion**:
+  - `POST /ingest`: Trigger the background task to clone the GitHub repo, chunk Markdown files, and embed them.
+- **Config & Health**:
+  - `GET /config/providers`: Exposes current active LLM/Embedding config to the UI.
+  - `GET /health`: Standard health check.
+
+## Agentic Routing Logic
+
+The system uses a **Two-Pass Intent Router**:
+1. **Deterministic Pass**: O(1) keyword and regex matching (e.g., `\bgenerate an artifact\b`) to quickly catch explicit user commands.
+2. **LLM Fallback Pass**: If deterministic fails, the message and recent context are sent to a fast LLM classifier which outputs JSON.
+
+**Available Agent Skills**:
+- `qa`: Triggered for domain-specific product/growth questions. Requires vector retrieval.
+- `chat`: Triggered for generic chit-chat, greetings, and meta-questions about the conversation history. **Bypasses vector retrieval entirely** to prevent context contamination (RLHF hallucination).
+- `artifact`: Triggered for explicit requests to build documents, dashboards, or UI components.
+- `ship30`: Triggered for converting insights into Twitter/LinkedIn essays.
+
+## LLM Toggle Switch Implementation
+
+The system supports hot-swapping between Local (Ollama) and Cloud (Anthropic/OpenAI) models seamlessly via the **Provider Factory Pattern**.
+
+1. Configuration is managed in `.env` (`ACTIVE_LLM_PROVIDER="ollama"` or `"anthropic"`).
+2. The `LLMService` is completely decoupled from the underlying SDK. When a Skill calls `_llm.generate()`, the `LLMService` dynamically requests a concrete provider instance from the `ProviderFactory`.
+3. The `ProviderFactory` inspects the active config and returns either an `OllamaProvider` (using HTTPX) or an `AnthropicProvider` (using the official SDK).
+4. Both providers implement the abstract `LLMProvider` interface (`generate` and `generate_stream`), normalizing the payloads (handling system prompts, message history arrays) so the core Agent logic never knows which model is actively serving the tokens.
