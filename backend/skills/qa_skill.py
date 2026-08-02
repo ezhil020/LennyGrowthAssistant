@@ -43,17 +43,9 @@ class QASkill(Skill):
         # 1. Retrieve relevant chunks
         attribution = await self._retrieval.retrieve(user_query)
 
-        # 2. Check if any relevant content was found
         relevant_chunks = [
             c for c in attribution.chunks if c.similarity_score >= MIN_RELEVANCE_SCORE
         ]
-        if not relevant_chunks:
-            logger.info("qa_no_relevant_content", query=user_query[:100])
-            return SkillOutput(
-                content=NO_CONTENT_RESPONSE,
-                sources=SourceAttribution(chunks=[], retrieval_mode=attribution.retrieval_mode),
-            )
-
         filtered_attribution = SourceAttribution(
             chunks=relevant_chunks, retrieval_mode=attribution.retrieval_mode
         )
@@ -69,7 +61,7 @@ class QASkill(Skill):
         # 4. Generate grounded answer
         response = await self._llm.generate(
             messages=context.messages,
-            system_prompt=QA_SYSTEM_PROMPT,
+            system_prompt=context.system_prompt,
             max_tokens=2048,
         )
 

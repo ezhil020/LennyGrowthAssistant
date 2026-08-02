@@ -43,6 +43,7 @@ def build_registry(llm_service, retrieval_service) -> SkillRegistry:
     from backend.skills.qa_skill import QASkill
     from backend.skills.ship30_skill import Ship30Skill
     from backend.skills.artifact_skill import ArtifactSkill
+    from backend.skills.chat_skill import ChatSkill
 
     registry = SkillRegistry()
     # Clear and re-register (stateless per request)
@@ -51,5 +52,6 @@ def build_registry(llm_service, retrieval_service) -> SkillRegistry:
     SkillRegistry.register(QASkill(llm_service=llm_service, retrieval_service=retrieval_service))
     SkillRegistry.register(Ship30Skill(llm_service=llm_service, retrieval_service=retrieval_service))
     SkillRegistry.register(ArtifactSkill(llm_service=llm_service, retrieval_service=retrieval_service))
+    SkillRegistry.register(ChatSkill(llm_service=llm_service))
 
     return registry

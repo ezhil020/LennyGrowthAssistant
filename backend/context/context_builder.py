@@ -69,21 +69,22 @@ class ContextBuilder:
             ]
             retrieval_block = build_retrieval_context(chunk_dicts)
 
-        # 2. Construct the user message with retrieval context prepended
+        # 2. Append retrieval block to system prompt
+        final_system_prompt = system_prompt
         if retrieval_block:
-            user_content = f"{retrieval_block}\n\nQUESTION: {user_query}"
-        else:
-            user_content = user_query
+            final_system_prompt = f"{system_prompt}\n\n{retrieval_block}"
+            
+        user_content = user_query
 
         # 3. Manage history within token budget
-        managed_history = await self._manage_context(history, user_content, system_prompt)
+        managed_history = await self._manage_context(history, user_content, final_system_prompt)
 
         # 4. Append current user message
         messages = managed_history + [{"role": "user", "content": user_content}]
 
         return PromptContext(
             messages=messages,
-            system_prompt=system_prompt,
+            system_prompt=final_system_prompt,
             source_attribution=source_attribution,
         )
 

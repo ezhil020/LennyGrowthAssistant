@@ -160,7 +160,8 @@ class ChatService:
 
         # 3. Load history
         history = await self._session_svc.get_history_as_dicts(session_id)
-        history = [h for h in history if not (h["role"] == "user" and h["content"] == user_message_text)]
+        if history and history[-1]["role"] == "user" and history[-1]["content"] == user_message_text:
+            history.pop()
 
         # 4. Route
         try:
@@ -177,45 +178,41 @@ class ChatService:
 
         # 6. Run skill (non-streaming — stream only for QA)
         try:
-            if routing.skill == "qa":
-                # Stream QA responses token by token
-                from backend.skills.qa_skill import QASkill
-                qa_skill: QASkill = skill
-
-                # Retrieval first
-                attribution = await self._retrieval.retrieve(user_message_text)
-                from backend.skills.qa_skill import MIN_RELEVANCE_SCORE
-                from backend.models.source import SourceAttribution
-                relevant = [c for c in attribution.chunks if c.similarity_score >= MIN_RELEVANCE_SCORE]
-
-                if not relevant:
-                    yield {"event": "token", "data": {"text": "I don't have information about that in Lenny's transcripts."}}
-                    yield {"event": "done", "data": {"sources": None, "artifact": None}}
-                    return
-
-                filtered = SourceAttribution(chunks=relevant, retrieval_mode=attribution.retrieval_mode)
+            if routing.skill == "qa" or routing.skill == "chat":
+                filtered = None
+                
+                # Retrieval only for QA
+                if routing.skill == "qa":
+                    attribution = await self._retrieval.retrieve(user_message_text)
+                    from backend.skills.qa_skill import MIN_RELEVANCE_SCORE
+                    from backend.models.source import SourceAttribution
+                    relevant = [c for c in attribution.chunks if c.similarity_score >= MIN_RELEVANCE_SCORE]
+                    filtered = SourceAttribution(chunks=relevant, retrieval_mode=attribution.retrieval_mode)
 
                 # Build context
                 from backend.context.context_builder import ContextBuilder
-                from backend.prompts.qa_prompts import QA_SYSTEM_PROMPT, build_retrieval_context
+                from backend.prompts.qa_prompts import QA_SYSTEM_PROMPT
+                from backend.prompts.chat_prompts import CHAT_SYSTEM_PROMPT
+                
                 cb = ContextBuilder(self._llm)
-                chunk_dicts = [{"episode_title": c.episode_title, "similarity_score": c.similarity_score, "chunk_text": c.chunk_text} for c in relevant]
-                context = await cb.build(history, filtered, user_message_text, QA_SYSTEM_PROMPT)
+                sys_prompt = QA_SYSTEM_PROMPT if routing.skill == "qa" else CHAT_SYSTEM_PROMPT
+                context = await cb.build(history, filtered, user_message_text, sys_prompt)
 
                 # Stream
                 full_response = ""
-                async for token in self._llm.generate_stream(context.messages, QA_SYSTEM_PROMPT):
+                async for token in self._llm.generate_stream(context.messages, context.system_prompt):
                     full_response += token
                     yield {"event": "token", "data": {"text": token}}
 
                 # Emit sources
-                sources_json = filtered.model_dump()
-                yield {"event": "sources", "data": sources_json}
+                sources_json = filtered.model_dump() if filtered else None
+                if sources_json:
+                    yield {"event": "sources", "data": sources_json}
 
                 # Persist
                 assistant_msg = await self._message_repo.create(
                     session_id=session_id, role="assistant", content=full_response,
-                    skill_used="qa", routing_intent=routing.intent, sources_json=sources_json,
+                    skill_used=routing.skill, routing_intent=routing.intent, sources_json=sources_json,
                 )
                 yield {"event": "done", "data": {"message_id": assistant_msg.id, "artifact": None}}
 
