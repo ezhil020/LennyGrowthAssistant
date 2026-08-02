@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useChatStore } from '../store/chatStore'
 
 export function Sidebar() {
-  const { sessions, activeSessionId, fetchSessions, createNewSession, loadSession } = useChatStore()
+  const { sessions, activeSessionId, fetchSessions, createNewSession, loadSession, deleteSession } = useChatStore()
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null)
 
   useEffect(() => {
     fetchSessions()
@@ -43,9 +44,39 @@ export function Sidebar() {
                 {new Date(session.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
               </div>
             </div>
+            <button 
+              className="btn-delete-session"
+              onClick={(e) => {
+                e.stopPropagation()
+                setSessionToDelete(session.id)
+              }}
+              title="Delete chat"
+            >
+              &times;
+            </button>
           </div>
         ))}
       </div>
+
+      {sessionToDelete && (
+        <div className="modal-overlay" onClick={() => setSessionToDelete(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete Chat</h3>
+            <p>Are you sure you want to delete this chat? This action cannot be undone.</p>
+            <div className="modal-actions">
+              <button className="modal-btn modal-btn-cancel" onClick={() => setSessionToDelete(null)}>
+                Cancel
+              </button>
+              <button className="modal-btn modal-btn-danger" onClick={() => {
+                deleteSession(sessionToDelete)
+                setSessionToDelete(null)
+              }}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

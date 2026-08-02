@@ -71,3 +71,10 @@ class SessionService:
         """Return message history as list of {"role", "content"} dicts."""
         messages = await self._messages.get_session_messages(session_id)
         return [{"role": m.role, "content": m.content} for m in messages]
+
+    async def delete_session(self, session_id: str) -> bool:
+        """Delete a session by ID."""
+        deleted = await self._sessions.delete(session_id)
+        if deleted:
+            logger.info("session_deleted", session_id=session_id)
+        return deleted

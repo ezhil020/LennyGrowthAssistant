@@ -69,3 +69,14 @@ async def get_session(
         )
 
     return SessionDetailResponse(session=session, messages=msg_responses)
+
+
+@router.delete("/{session_id}", status_code=204)
+async def delete_session(
+    session_id: str,
+    svc: SessionService = Depends(get_session_service),
+):
+    from fastapi import HTTPException
+    deleted = await svc.delete_session(session_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Session not found")

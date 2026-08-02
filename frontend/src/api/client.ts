@@ -72,6 +72,8 @@ export const sessionsApi = {
 
   get: (id: string) =>
     api.get<{ session: Session; messages: Message[] }>(`/sessions/${id}`),
+
+  delete: (id: string) => api.delete(`/sessions/${id}`),
 }
 
 export const artifactsApi = {

@@ -302,6 +302,31 @@ body {
   margin-top: 2px;
 }
 
+.btn-delete-session {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  transition: all var(--t-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.session-item:hover .btn-delete-session {
+  opacity: 1;
+}
+
+.btn-delete-session:hover {
+  color: var(--status-error);
+  background: rgba(248, 113, 113, 0.1);
+}
+
 /* ── Main Area ─────────────────────────────────────────────── */
 .main-area {
   flex: 1;
@@ -1050,3 +1075,80 @@ body {
 .gap-2 { gap: var(--space-2); }
 .text-muted { color: var(--text-muted); }
 .text-sm { font-size: 13px; }
+
+/* ── Modal Overlay ─────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeSlideIn 0.2s ease;
+}
+
+.modal-content {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  max-width: 400px;
+  width: 90%;
+  box-shadow: var(--shadow-md), 0 0 40px rgba(56, 189, 248, 0.05);
+  text-align: center;
+}
+
+.modal-content h3 {
+  margin-bottom: var(--space-3);
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.modal-content p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: var(--space-5);
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+}
+
+.modal-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  border: 1px solid transparent;
+  font-family: var(--font-sans);
+}
+
+.modal-btn-cancel {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--border-subtle);
+}
+
+.modal-btn-cancel:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.modal-btn-danger {
+  background: rgba(248, 113, 113, 0.1);
+  color: var(--status-error);
+  border-color: rgba(248, 113, 113, 0.2);
+}
+
+.modal-btn-danger:hover {
+  background: var(--status-error);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(248, 113, 113, 0.4);
+}

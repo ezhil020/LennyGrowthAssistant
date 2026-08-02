@@ -19,6 +19,7 @@ interface ChatState {
   fetchSessions: () => Promise<void>
   createNewSession: () => Promise<void>
   loadSession: (id: string) => Promise<void>
+  deleteSession: (id: string) => Promise<void>
   sendMessage: (content: string) => Promise<void>
   closeArtifact: () => void
   openArtifact: (id: string) => Promise<void>
@@ -71,6 +72,28 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // If there are artifacts in the history, we could optionally open the latest one
     } catch (error) {
       console.error('Failed to load session:', error)
+    }
+  },
+
+  deleteSession: async (id: string) => {
+    try {
+      await sessionsApi.delete(id)
+      set((state) => {
+        const remainingSessions = state.sessions.filter(s => s.id !== id)
+        const isDeletingActive = state.activeSessionId === id
+        return {
+          sessions: remainingSessions,
+          ...(isDeletingActive ? {
+            activeSessionId: null,
+            activeSession: null,
+            messages: [],
+            activeArtifact: null,
+            isArtifactVisible: false,
+          } : {})
+        }
+      })
+    } catch (error) {
+      console.error('Failed to delete session:', error)
     }
   },
 
