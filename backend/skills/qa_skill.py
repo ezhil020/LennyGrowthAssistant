@@ -38,7 +38,13 @@ class QASkill(Skill):
         self._context_builder = ContextBuilder(llm_service)
 
     async def run(self, user_query: str, history: list[dict]) -> SkillOutput:
-        logger.info("qa_skill_run", query_len=len(user_query))
+        logger.info(
+            "qa_skill_start",
+            module="qa_skill",
+            query=user_query,
+            query_len=len(user_query),
+            history_turns=len(history),
+        )
 
         # 1. Retrieve relevant chunks
         attribution = await self._retrieval.retrieve(user_query)
@@ -50,12 +56,45 @@ class QASkill(Skill):
             chunks=relevant_chunks, retrieval_mode=attribution.retrieval_mode
         )
 
+        logger.info(
+            "qa_skill_retrieval_filtered",
+            module="qa_skill",
+            query=user_query,
+            total_chunks=len(attribution.chunks),
+            relevant_chunks=len(relevant_chunks),
+            min_relevance_score=MIN_RELEVANCE_SCORE,
+            has_context=len(relevant_chunks) > 0,
+            relevant_episodes=[
+                f"{c.episode_title[:50]} ({c.similarity_score:.2f})"
+                for c in relevant_chunks[:5]
+            ],
+        )
+
+        if not relevant_chunks:
+            logger.warning(
+                "qa_skill_no_context",
+                module="qa_skill",
+                query=user_query,
+                action="returning_no_content_response",
+            )
+
         # 3. Build prompt context
         context = await self._context_builder.build(
             history=history,
             source_attribution=filtered_attribution,
             user_query=user_query,
             system_prompt=QA_SYSTEM_PROMPT,
+        )
+
+        logger.info(
+            "qa_skill_prompt_ready",
+            module="qa_skill",
+            num_messages=len(context.messages),
+            system_prompt_len=len(context.system_prompt),
+            last_user_message_preview=(
+                context.messages[-1]["content"][:200].replace("\n", " ")
+                if context.messages else ""
+            ),
         )
 
         # 4. Generate grounded answer
@@ -65,5 +104,10 @@ class QASkill(Skill):
             max_tokens=2048,
         )
 
-        logger.info("qa_skill_complete", response_len=len(response))
+        logger.info(
+            "qa_skill_complete",
+            module="qa_skill",
+            response_len=len(response),
+            response_preview=response[:200].replace("\n", " "),
+        )
         return SkillOutput(content=response, sources=filtered_attribution)

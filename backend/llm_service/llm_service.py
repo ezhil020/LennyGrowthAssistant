@@ -47,13 +47,24 @@ class LLMService:
         system_prompt: str = "",
         max_tokens: int = 4096,
     ) -> str:
-        """Generate a complete response with automatic retry on transient errors.
-
-        Raises:
-            RuntimeError: With a user-facing message on persistent failure.
-        """
+        """Generate a complete response with automatic retry on transient errors."""
         input_tokens = count_messages_tokens(messages) + count_tokens(system_prompt)
         start = time.monotonic()
+
+        logger.info(
+            "llm_request",
+            module="llm_service",
+            provider=self.provider.name,
+            model=self.provider.model,
+            num_messages=len(messages),
+            input_tokens_estimate=input_tokens,
+            max_tokens=max_tokens,
+            system_prompt_preview=system_prompt[:200].replace("\n", " ") if system_prompt else "",
+            messages_preview=[
+                {"role": m["role"], "content_preview": m["content"][:150].replace("\n", " ")}
+                for m in messages
+            ],
+        )
 
         try:
             async for attempt in AsyncRetrying(
@@ -81,12 +92,14 @@ class LLMService:
         latency_ms = int((time.monotonic() - start) * 1000)
         output_tokens = count_tokens(response)
         logger.info(
-            "llm_generate",
+            "llm_response",
+            module="llm_service",
             provider=self.provider.name,
             model=self.provider.model,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             latency_ms=latency_ms,
+            response_preview=response[:300].replace("\n", " "),
         )
         return response
 
@@ -96,14 +109,25 @@ class LLMService:
         system_prompt: str = "",
         max_tokens: int = 4096,
     ) -> AsyncIterator[str]:
-        """Stream a response with retry on initial connection errors only.
-
-        Yields:
-            String fragments as they arrive from the provider.
-        """
+        """Stream a response. Logs full request before streaming and full response after."""
         input_tokens = count_messages_tokens(messages) + count_tokens(system_prompt)
         start = time.monotonic()
         total_output = ""
+
+        logger.info(
+            "llm_stream_request",
+            module="llm_service",
+            provider=self.provider.name,
+            model=self.provider.model,
+            num_messages=len(messages),
+            input_tokens_estimate=input_tokens,
+            max_tokens=max_tokens,
+            system_prompt_preview=system_prompt[:200].replace("\n", " ") if system_prompt else "",
+            messages_preview=[
+                {"role": m["role"], "content_preview": m["content"][:150].replace("\n", " ")}
+                for m in messages
+            ],
+        )
 
         try:
             stream = self.provider.generate_stream(
@@ -122,12 +146,14 @@ class LLMService:
         latency_ms = int((time.monotonic() - start) * 1000)
         output_tokens = count_tokens(total_output)
         logger.info(
-            "llm_stream_complete",
+            "llm_stream_response",
+            module="llm_service",
             provider=self.provider.name,
             model=self.provider.model,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             latency_ms=latency_ms,
+            full_response=total_output[:500].replace("\n", " "),
         )
 
 

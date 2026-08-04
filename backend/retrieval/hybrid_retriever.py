@@ -31,11 +31,32 @@ class HybridRetriever(Retriever):
         self._lexical = LexicalRetriever(db)
 
     async def retrieve(self, query: str, top_k: int = 10) -> list[SourceChunk]:
-        # Fetch from both retrievers sequentially (asyncpg doesn't support concurrent queries on one session)
+        logger.info(
+            "retrieval_query",
+            module="hybrid_retriever",
+            query=query,
+            top_k=top_k,
+        )
+
+        # Fetch from both retrievers sequentially
         vector_results = await self._vector.retrieve(query, top_k=top_k * 2)
         lexical_results = await self._lexical.retrieve(query, top_k=top_k * 2)
 
-        # Build RRF scores indexed by chunk_id
+        logger.info(
+            "retrieval_raw_counts",
+            module="hybrid_retriever",
+            vector_results=len(vector_results),
+            lexical_results=len(lexical_results),
+            top_vector=[
+                f"{c.episode_title[:50]} (score={c.similarity_score:.3f})"
+                for c in vector_results[:3]
+            ],
+            top_lexical=[
+                f"{c.episode_title[:50]}" for c in lexical_results[:3]
+            ],
+        )
+
+        # Build RRF scores
         rrf_scores: dict[str, float] = {}
         chunk_map: dict[str, SourceChunk] = {}
 
@@ -48,11 +69,9 @@ class HybridRetriever(Retriever):
             if chunk.chunk_id not in chunk_map:
                 chunk_map[chunk.chunk_id] = chunk
 
-        # Sort by descending RRF score and take top_k
         sorted_ids = sorted(rrf_scores, key=lambda cid: rrf_scores[cid], reverse=True)
         top_ids = sorted_ids[:top_k]
 
-        # Build result list with normalised scores
         max_score = rrf_scores[top_ids[0]] if top_ids else 1.0
         results = []
         for chunk_id in top_ids:
@@ -70,10 +89,18 @@ class HybridRetriever(Retriever):
             )
 
         logger.info(
-            "hybrid_retrieval",
-            query_len=len(query),
-            vector_count=len(vector_results),
-            lexical_count=len(lexical_results),
+            "retrieval_fused_results",
+            module="hybrid_retriever",
+            query=query,
             fused_count=len(results),
+            top_chunks=[
+                {
+                    "episode": r.episode_title[:60],
+                    "chunk_index": r.chunk_index,
+                    "rrf_score": r.similarity_score,
+                    "text_preview": r.chunk_text[:100].replace("\n", " "),
+                }
+                for r in results[:5]
+            ],
         )
         return results
